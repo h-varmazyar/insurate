@@ -11,14 +11,14 @@ import (
 )
 
 func (c *Client) NegativeScore(ctx context.Context, licence *entity.DrivingLicence) (int8, error) {
+	if licence.Person == nil {
+		return 0, errors.New("nil person not acceptable in licence")
+	}
+
 	scoreUrl := fmt.Sprintf("%v/billing/v2/clients/%v/negativeScore", c.BaseUrl, c.ID)
 	req, err := http.NewRequest(http.MethodGet, scoreUrl, nil)
 	if err != nil {
 		return 0, err
-	}
-
-	if licence.Person == nil {
-		return 0, errors.New("nil person not acceptable in licence")
 	}
 
 	queryParams := url.Values{

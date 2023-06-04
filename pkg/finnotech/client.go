@@ -50,6 +50,13 @@ func (c *Client) doRequest(req *http.Request, res interface{}) (int, error) {
 }
 
 //todo: must be handle errors
-func handleFinnotechError(ctx context.Context, err Error) error {
-	return errors.New(err.Message)
+func handleFinnotechError(_ context.Context, err *Error) error {
+	if err != nil {
+		if err.Message != "" {
+			return errors.New(err.Message)
+		} else {
+			return errors.New(err.Code)
+		}
+	}
+	return errors.New("invalid status")
 }

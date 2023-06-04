@@ -1,5 +1,7 @@
 package entity
 
+import "time"
+
 type DrivingOffence struct {
 	ID             string
 	Type           string
@@ -9,13 +11,13 @@ type DrivingOffence struct {
 	City           interface{}
 	Location       string
 	Date           string
-	Serial         string
+	PlateCode      string
 	DataValue      string
 	Barcode        interface{}
-	License        string
+	Plate          *Plate
 	BillID         int32
 	PaymentID      int32
-	NormalizedDate string
+	NormalizedDate time.Time
 	IsPayable      bool
 	PolicemanCode  interface{}
 	HasImage       bool
