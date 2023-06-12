@@ -2,10 +2,9 @@ package finnotech
 
 import (
 	"fmt"
-	"github.com/h-varmazyar/insurate/entity"
 )
 
-func generatePlateCode(plate *entity.Plate) string {
+func generatePlateCode(plate *Plate) string {
 	alphabetCode := ""
 	switch plate.Alphabet {
 	case "الف":

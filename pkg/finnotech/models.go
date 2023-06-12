@@ -33,7 +33,7 @@ type DrivingOffenceBill struct {
 	City           *string     `json:"city"`
 	Location       string      `json:"location"`
 	Date           string      `json:"date"`
-	Serial         string      `json:"serial"`
+	PlateCode      string      `json:"serial"`
 	DataValue      string      `json:"dataValue"`
 	Barcode        interface{} `json:"barcode"`
 	Licence        string      `json:"license"`
@@ -53,4 +53,11 @@ type DrivingOffenceResult struct {
 type DrivingOffence struct {
 	*BaseResponse
 	Result *DrivingOffenceResult `json:"result"`
+}
+
+type Plate struct {
+	Alphabet    string
+	StartNumber int8
+	EndNumber   int8
+	RegionCode  int8
 }
