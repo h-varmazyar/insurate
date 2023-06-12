@@ -22,10 +22,17 @@ func NewPostgresRepository(_ context.Context, logger *log.Logger, db *gorm.DB) (
 	}, nil
 }
 
-func (r *postgresRepository) Create(ctx context.Context, person *Person) error {
+func (r *postgresRepository) Create(_ context.Context, person *Person) error {
+	if err := r.db.Save(person).Error; err != nil {
+		return err
+	}
 	return nil
 }
 
-func (r *postgresRepository) Return(ctx context.Context, nationalCode string) (*Person, error) {
-	return nil, nil
+func (r *postgresRepository) Return(_ context.Context, nationalCode string) (*Person, error) {
+	person := new(Person)
+	if err := r.db.Model(new(Person)).Where("national_code = ?", nationalCode).Error; err != nil {
+		return nil, err
+	}
+	return person, nil
 }

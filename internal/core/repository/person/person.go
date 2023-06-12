@@ -19,7 +19,7 @@ const (
 )
 
 type Person struct {
-	NationalCode string
+	NationalCode string //primary key
 	BirthDate    time.Time
 	FirstName    string
 	LastName     string

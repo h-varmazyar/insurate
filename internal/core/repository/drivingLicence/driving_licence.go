@@ -31,7 +31,7 @@ const (
 type DrivingLicence struct {
 	gormext.UniversalModel
 	Person         *personRepo.Person
-	Number         uint64
+	Number         uint64 //primary key
 	ExpirationTime time.Time
 	AllowedVehicle []AllowedLicence
 	NegativeScore  int8

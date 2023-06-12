@@ -18,7 +18,7 @@ type Plate struct {
 	StartNumber int8
 	EndNumber   int8
 	RegionCode  int8
-	Text        string
+	Text        string //unique
 }
 
 type Repository interface {
