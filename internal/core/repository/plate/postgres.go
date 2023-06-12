@@ -24,7 +24,7 @@ func NewPostgresRepository(_ context.Context, logger *log.Logger, db *gorm.DB) (
 
 func (r *postgresRepository) ReturnByText(_ context.Context, text string) (*Plate, error) {
 	plate := new(Plate)
-	if err := r.db.Model(new(Plate)).Where("text = ?", text).Error; err != nil {
+	if err := r.db.Model(new(Plate)).Where("text = ?", text).First(plate).Error; err != nil {
 		return nil, err
 	}
 	return plate, nil

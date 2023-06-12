@@ -31,7 +31,7 @@ func (r *postgresRepository) Create(_ context.Context, person *Person) error {
 
 func (r *postgresRepository) Return(_ context.Context, nationalCode string) (*Person, error) {
 	person := new(Person)
-	if err := r.db.Model(new(Person)).Where("national_code = ?", nationalCode).Error; err != nil {
+	if err := r.db.Model(new(Person)).Where("national_code = ?", nationalCode).First(person).Error; err != nil {
 		return nil, err
 	}
 	return person, nil
