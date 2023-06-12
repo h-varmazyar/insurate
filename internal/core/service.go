@@ -11,6 +11,7 @@ import (
 	personRepo "github.com/h-varmazyar/insurate/internal/core/repository/person"
 	plateRepo "github.com/h-varmazyar/insurate/internal/core/repository/plate"
 	scoreRepo "github.com/h-varmazyar/insurate/internal/core/repository/score"
+	db "github.com/h-varmazyar/insurate/internal/pkg/db/PostgreSQL"
 	"github.com/h-varmazyar/insurate/pkg/finnotech"
 	platePkg "github.com/h-varmazyar/insurate/pkg/plate"
 	log "github.com/sirupsen/logrus"
@@ -20,15 +21,46 @@ import (
 )
 
 type Service struct {
-	personRepository         personRepo.Repository
-	scoreRepository          scoreRepo.Repository
-	plateRepository          plateRepo.Repository
 	drivingLicenceRepository drivingLicenceRepo.Repository
+	personRepository         personRepo.Repository
+	plateRepository          plateRepo.Repository
+	scoreRepository          scoreRepo.Repository
 	finnoTechClient          *finnotech.Client
+	log                      *log.Logger
 }
 
-func NewService() *Service {
-	return new(Service)
+func NewService(ctx context.Context, log *log.Logger, db *db.DB, finnotechClient *finnotech.Client) (*Service, error) {
+	service := &Service{
+		finnoTechClient: finnotechClient,
+		log:             log,
+	}
+	var err error
+
+	service.drivingLicenceRepository, err = drivingLicenceRepo.NewRepository(ctx, log, db)
+	if err != nil {
+		log.WithError(err).Error("driving licence repository failed")
+		return nil, err
+	}
+
+	service.personRepository, err = personRepo.NewRepository(ctx, log, db)
+	if err != nil {
+		log.WithError(err).Error("driving licence repository failed")
+		return nil, err
+	}
+
+	service.plateRepository, err = plateRepo.NewRepository(ctx, log, db)
+	if err != nil {
+		log.WithError(err).Error("driving licence repository failed")
+		return nil, err
+	}
+
+	service.personRepository, err = personRepo.NewRepository(ctx, log, db)
+	if err != nil {
+		log.WithError(err).Error("driving licence repository failed")
+		return nil, err
+	}
+
+	return service, nil
 }
 
 type NewScoreReq struct {

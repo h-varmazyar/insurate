@@ -1,0 +1,14 @@
+http_port: 8080
+finnotech:
+  NID: ""
+  baseUrl: "https//sandboxapi.finnotech.ir"
+  clientID: ""
+  authToken: ""
+db:
+  type: "postgreSQL"
+  username: "postgres"
+  password: "postgres"
+  host: "postgres"
+  port: 5432
+  name: "chipmunk"
+  is_ssl_enable: false

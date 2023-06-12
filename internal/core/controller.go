@@ -10,9 +10,10 @@ type Controller struct {
 	service *Service
 }
 
-func NewController() *Controller {
+func NewController(service *Service) *Controller {
 	c := &Controller{
-		Engine: gin.Default(),
+		Engine:  gin.Default(),
+		service: service,
 	}
 	return c
 }

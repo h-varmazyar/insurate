@@ -13,10 +13,10 @@ import (
 )
 
 type Config struct {
-	NID       string
-	BaseUrl   string
-	ClientID  string
-	AuthToken string
+	NID       string `yaml:"NID"`
+	BaseUrl   string `yaml:"baseUrl"`
+	ClientID  string `yaml:"clientID"`
+	AuthToken string `yaml:"authToken"`
 }
 
 type Client struct {
