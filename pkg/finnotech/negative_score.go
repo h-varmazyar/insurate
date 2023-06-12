@@ -16,7 +16,7 @@ type NegativeScoreReq struct {
 }
 
 func (c *Client) NegativeScore(ctx context.Context, negativeScoreReq *NegativeScoreReq) (int8, error) {
-	scoreUrl := fmt.Sprintf("%v/billing/v2/clients/%v/negativeScore", c.BaseUrl, c.ID)
+	scoreUrl := fmt.Sprintf("%v/billing/v2/clients/%v/negativeScore", c.configs.BaseUrl, c.configs.ClientID)
 	req, err := http.NewRequest(http.MethodGet, scoreUrl, nil)
 	if err != nil {
 		return 0, err
@@ -29,6 +29,7 @@ func (c *Client) NegativeScore(ctx context.Context, negativeScoreReq *NegativeSc
 	}
 
 	c.setQueryParams(req, queryParams)
+	c.bearerAuthorize(req)
 
 	res := new(NegativeScore)
 	code, err := c.doRequest(req, res)

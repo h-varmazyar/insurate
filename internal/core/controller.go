@@ -7,6 +7,7 @@ import (
 
 type Controller struct {
 	*gin.Engine
+	service *Service
 }
 
 func NewController() *Controller {
@@ -28,8 +29,31 @@ func (c *Controller) RegisterRoutes() {
 func (c *Controller) scoreGroup() {
 	score := c.Group("/score")
 	score.GET("/new", c.newScore)
+	score.GET("/:score_id/download", c.downloadScoreReport)
 }
 
 func (c *Controller) newScore(ctx *gin.Context) {
-	ctx.JSON(http.StatusNotImplemented, gin.H{})
+	req := new(NewScoreReq)
+	err := ctx.ShouldBind(req)
+	if err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := c.service.NewScore(ctx, req)
+	if err != nil {
+		ctx.String(http.StatusNotAcceptable, err.Error())
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+func (c *Controller) downloadScoreReport(ctx *gin.Context) {
+	scoreID := ctx.Param("score_id")
+
+	score, err := c.service.DownloadScore(ctx, &DownloadScoreReq{ScoreID: scoreID})
+	if err != nil {
+		ctx.String(http.StatusNotAcceptable, err.Error())
+		return
+	}
+	ctx.JSON(http.StatusOK, score.Score)
 }

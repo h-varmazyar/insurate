@@ -1,5 +1,7 @@
 package finnotech
 
+import "time"
+
 type Error struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -60,4 +62,15 @@ type Plate struct {
 	StartNumber int8
 	EndNumber   int8
 	RegionCode  int8
+}
+
+type AuthResponse struct {
+	*BaseResponse
+	Result struct {
+		Value        string        `json:"value"`
+		Scopes       []string      `json:"scopes"`
+		LifeTime     time.Duration `json:"lifeTime"`
+		CreationDate string        `json:"creationDate"`
+		RefreshToken string        `json:"refreshToken"`
+	} `json:"result"`
 }

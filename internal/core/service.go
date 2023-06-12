@@ -46,11 +46,12 @@ type NewScoreResp struct {
 }
 
 type DownloadScoreReq struct {
-	ScoreID uuid.UUID
+	ScoreID string
 }
 
 type DownloadScoreResp struct {
 	FilePath string
+	Score    *scoreRepo.Score
 }
 
 func (s *Service) NewScore(ctx context.Context, req *NewScoreReq) (*NewScoreResp, error) {
@@ -109,7 +110,16 @@ func (s *Service) NewScore(ctx context.Context, req *NewScoreReq) (*NewScoreResp
 }
 
 func (s *Service) DownloadScore(ctx context.Context, req *DownloadScoreReq) (*DownloadScoreResp, error) {
-
+	scoreID, err := uuid.Parse(req.ScoreID)
+	if err != nil {
+		return nil, err
+	}
+	score, err := s.scoreRepository.ReturnByID(ctx, scoreID)
+	if err != nil {
+		return nil, err
+	}
+	resp := &DownloadScoreResp{Score: score}
+	return resp, nil
 }
 
 func (s *Service) scoringAsyncProcesses(ctx context.Context, score *scoreRepo.Score, params *ScoreCalculateParams) {

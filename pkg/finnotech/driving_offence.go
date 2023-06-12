@@ -19,7 +19,7 @@ func (c *Client) DrivingOffence(ctx context.Context, drivingOffenceReq *DrivingO
 		return nil, errors.New("nil plate not acceptable in driving drivingOffence")
 	}
 
-	scoreUrl := fmt.Sprintf("%v/billing/v2/clients/%v/drivingOffense", c.BaseUrl, c.ID)
+	scoreUrl := fmt.Sprintf("%v/billing/v2/clients/%v/drivingOffense", c.configs.BaseUrl, c.configs.ClientID)
 	req, err := http.NewRequest(http.MethodGet, scoreUrl, nil)
 	if err != nil {
 		return nil, err
@@ -33,6 +33,7 @@ func (c *Client) DrivingOffence(ctx context.Context, drivingOffenceReq *DrivingO
 	}
 
 	c.setQueryParams(req, queryParams)
+	c.bearerAuthorize(req)
 
 	res := new(DrivingOffence)
 	code, err := c.doRequest(req, res)

@@ -28,4 +28,5 @@ type Repository interface {
 	Update(ctx context.Context, score *Score) error
 	UpdateStatus(ctx context.Context, scoreID uuid.UUID, newStatus Status) error
 	Last(ctx context.Context, nationalCode string) (*Score, error)
+	ReturnByID(ctx context.Context, id uuid.UUID) (*Score, error)
 }

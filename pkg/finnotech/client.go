@@ -2,24 +2,57 @@ package finnotech
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 )
 
+type Config struct {
+	NID       string
+	BaseUrl   string
+	ClientID  string
+	AuthToken string
+}
+
 type Client struct {
-	BaseUrl string
-	ID      string
-	Token   string
+	configs         *Config
+	BearerToken     string
+	BearerExpiredAt time.Time
+}
+
+func NewClient(ctx context.Context, configs *Config) (*Client, error) {
+	client := &Client{
+		configs:     configs,
+		BearerToken: "",
+	}
+
+	err := client.Authorize(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
 }
 
 func (c *Client) setHeaders(req *http.Request) {
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", c.Token))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+}
+
+func (c *Client) basicAuthorize(req *http.Request) {
+	encodedToken := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%v:%v", c.configs.ClientID, c.configs.AuthToken)))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %v", encodedToken))
+}
+
+func (c *Client) bearerAuthorize(req *http.Request) {
+	if c.BearerExpiredAt.Before(time.Now()) {
+		//refresh token
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", c.BearerToken))
 }
 
 func (c *Client) setQueryParams(req *http.Request, values url.Values) {
