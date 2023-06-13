@@ -1,7 +1,6 @@
 package drivingOffence
 
 import plateRepo "github.com/h-varmazyar/insurate/internal/core/repository/plate"
-import "time"
 
 type DrivingOffence struct {
 	ID             string
@@ -16,9 +15,9 @@ type DrivingOffence struct {
 	DataValue      string
 	Barcode        interface{}
 	Plate          *plateRepo.Plate
-	BillID         int32
+	BillID         string
 	PaymentID      int32
-	NormalizedDate time.Time
+	NormalizedDate string
 	IsPayable      bool
 	PolicemanCode  interface{}
 	HasImage       bool

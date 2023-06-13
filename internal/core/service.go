@@ -8,6 +8,7 @@ import (
 	"github.com/h-varmazyar/gopet/national_id"
 	"github.com/h-varmazyar/gopet/phone"
 	drivingLicenceRepo "github.com/h-varmazyar/insurate/internal/core/repository/drivingLicence"
+	"github.com/h-varmazyar/insurate/internal/core/repository/drivingOffence"
 	personRepo "github.com/h-varmazyar/insurate/internal/core/repository/person"
 	plateRepo "github.com/h-varmazyar/insurate/internal/core/repository/plate"
 	scoreRepo "github.com/h-varmazyar/insurate/internal/core/repository/score"
@@ -80,7 +81,7 @@ type NewScoreReq struct {
 }
 
 type NewScoreResp struct {
-	ScoreID uuid.UUID
+	Score *scoreRepo.Score
 }
 
 type DownloadScoreReq struct {
@@ -93,15 +94,15 @@ type DownloadScoreResp struct {
 }
 
 func (s *Service) NewScore(ctx context.Context, req *NewScoreReq) (*NewScoreResp, error) {
+	var (
+		score *scoreRepo.Score
+		err   error
+	)
+
 	if !national_id.Validate(req.NationalCode) {
 		return nil, errors.New("invalid_national_code")
 	}
 
-	var (
-		score                *scoreRepo.Score
-		err                  error
-		scoreCalculateParams = new(ScoreCalculateParams)
-	)
 	score, err = s.scoreRepository.Last(ctx, req.NationalCode)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
@@ -109,45 +110,38 @@ func (s *Service) NewScore(ctx context.Context, req *NewScoreReq) (*NewScoreResp
 
 	//todo: read time from config
 	if score != nil && score.CreatedAt.After(time.Now().Add(-1*time.Second*20)) {
-		return &NewScoreResp{ScoreID: score.ID}, nil
+		return &NewScoreResp{Score: score}, nil
 	} else {
-		score = &scoreRepo.Score{
-			NationalCode: req.NationalCode,
-			Status:       scoreRepo.Pending,
-		}
-		err = s.scoreRepository.Create(ctx, score)
-		if err != nil {
-			return nil, err
-		}
+		score = new(scoreRepo.Score)
+		score.NationalCode = req.NationalCode
 	}
 	defer func() {
 		if err != nil && score != nil {
 			_ = s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.Failed)
 		}
 	}()
-	fmt.Println("creating models")
 
-	scoreCalculateParams.Person, err = s.preparePerson(ctx, req.Mobile, req.NationalCode)
+	score.Person, err = s.preparePerson(ctx, req.Mobile, req.NationalCode)
 	if err != nil {
 		return nil, err
 	}
 
-	scoreCalculateParams.Plate, err = s.preparePlate(ctx, scoreCalculateParams.Person, req)
+	score.Plate, err = s.preparePlate(ctx, score.Person, req)
 	if err != nil {
 		return nil, err
 	}
 
-	scoreCalculateParams.DrivingLicence, err = s.prepareDrivingLicence(ctx, scoreCalculateParams.Person, req.DrivingLicenceNumber)
+	score.DrivingLicence, err = s.prepareDrivingLicence(ctx, score.Person, req.DrivingLicenceNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("model created")
+	err = s.scoringAsyncProcesses(ctx, score)
+	if err != nil {
+		return nil, err
+	}
 
-	timeoutCtx, _ := context.WithTimeout(context.Background(), time.Minute)
-	go s.scoringAsyncProcesses(timeoutCtx, score, scoreCalculateParams)
-
-	return &NewScoreResp{ScoreID: score.ID}, nil
+	return &NewScoreResp{Score: score}, nil
 }
 
 func (s *Service) DownloadScore(ctx context.Context, req *DownloadScoreReq) (*DownloadScoreResp, error) {
@@ -163,34 +157,36 @@ func (s *Service) DownloadScore(ctx context.Context, req *DownloadScoreReq) (*Do
 	return resp, nil
 }
 
-func (s *Service) scoringAsyncProcesses(ctx context.Context, score *scoreRepo.Score, params *ScoreCalculateParams) {
-	fmt.Println("starting async")
+func (s *Service) scoringAsyncProcesses(ctx context.Context, score *scoreRepo.Score) error {
 	var err error
 	defer func() {
 		if err != nil {
 			_ = s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.Failed)
 		}
 	}()
-	pe := s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.PreparingData)
-	fmt.Println("preparing data")
-	fmt.Println(pe)
-	params.Offences, err = s.getDrivingOffence(ctx, params.Plate, params.Person)
+	_ = s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.PreparingData)
+	score.DrivingOffences, err = s.getDrivingOffence(ctx, score.Plate, score.Person)
 	if err != nil {
 		log.WithError(err).Error("failed to get driving offences")
-		return
+		return err
 	}
 
-	params.NegativeScore, err = s.getNegativeScore(ctx, params.Person, params.DrivingLicence)
+	score.NegativeScore, err = s.getNegativeScore(ctx, score.Person, score.DrivingLicence)
 	if err != nil {
 		log.WithError(err).Error("failed to get negative score")
-		return
+		return err
 	}
-	fmt.Println("calculating")
 	_ = s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.Calculating)
+	//todo: scoreCalculator must be removed
+	params := &ScoreCalculateParams{score}
 	score.Value = params.CalculateScore(ctx)
 	score.Status = scoreRepo.Done
-	err = s.scoreRepository.Update(ctx, score)
-	fmt.Println("done:", score.Value)
+	err = s.scoreRepository.Create(ctx, score)
+	if err != nil {
+		s.log.WithError(err).Error("failed to update score")
+		return err
+	}
+	return nil
 }
 
 func (s *Service) preparePerson(ctx context.Context, mobileNumber, nationalCode string) (*personRepo.Person, error) {
@@ -268,7 +264,7 @@ func (s *Service) prepareDrivingLicence(ctx context.Context, person *personRepo.
 	return licence, nil
 }
 
-func (s *Service) getDrivingOffence(ctx context.Context, plate *plateRepo.Plate, person *personRepo.Person) (*finnotech.DrivingOffenceResult, error) {
+func (s *Service) getDrivingOffence(ctx context.Context, plate *plateRepo.Plate, person *personRepo.Person) ([]*drivingOffence.DrivingOffence, error) {
 	drivingOffenceReq := &finnotech.DrivingOffenceReq{
 		NationalCode: person.NationalCode,
 		Mobile:       person.Mobile,
@@ -280,9 +276,34 @@ func (s *Service) getDrivingOffence(ctx context.Context, plate *plateRepo.Plate,
 		},
 	}
 
-	offences, err := s.finnoTechClient.DrivingOffence(ctx, drivingOffenceReq)
+	finnotechOffences, err := s.finnoTechClient.DrivingOffence(ctx, drivingOffenceReq)
 	if err != nil {
 		return nil, err
+	}
+
+	offences := make([]*drivingOffence.DrivingOffence, 0)
+	for _, bill := range finnotechOffences.Bills {
+		offence := &drivingOffence.DrivingOffence{
+			ID:             bill.ID,
+			Type:           bill.Type,
+			Description:    bill.Description,
+			Code:           bill.Code,
+			Price:          bill.Price,
+			City:           bill.City,
+			Location:       bill.Location,
+			Date:           bill.Date,
+			PlateCode:      bill.PlateCode,
+			DataValue:      bill.DataValue,
+			Barcode:        bill.Barcode,
+			Plate:          plate,
+			BillID:         bill.BillID,
+			PaymentID:      bill.PaymentID,
+			NormalizedDate: bill.NormalizedDate,
+			IsPayable:      bill.IsPayable,
+			PolicemanCode:  bill.PolicemanCode,
+			HasImage:       bill.HasImage,
+		}
+		offences = append(offences, offence)
 	}
 	return offences, nil
 }
@@ -299,4 +320,9 @@ func (s *Service) getNegativeScore(ctx context.Context, person *personRepo.Perso
 		return 0, err
 	}
 	return negativeScore, nil
+}
+
+func (s *Service) fillScoreData(ctx context.Context, score *scoreRepo.Score, params *ScoreCalculateParams) {
+
+	score.Status = scoreRepo.Done
 }

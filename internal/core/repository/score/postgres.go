@@ -31,7 +31,7 @@ func (r *postgresRepository) Create(_ context.Context, score *Score) error {
 }
 
 func (r *postgresRepository) Update(_ context.Context, score *Score) error {
-	if err := r.db.Model(new(Score)).Updates(score).Error; err != nil {
+	if err := r.db.Model(new(Score)).Where("id = ?", score.ID).Updates(score).Error; err != nil {
 		return err
 	}
 	return nil

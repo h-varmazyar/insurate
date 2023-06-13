@@ -2,49 +2,43 @@ package core
 
 import (
 	"context"
-	drivingLicenceRepo "github.com/h-varmazyar/insurate/internal/core/repository/drivingLicence"
 	personRepo "github.com/h-varmazyar/insurate/internal/core/repository/person"
-	plateRepo "github.com/h-varmazyar/insurate/internal/core/repository/plate"
-	"github.com/h-varmazyar/insurate/pkg/finnotech"
+	scoreRepo "github.com/h-varmazyar/insurate/internal/core/repository/score"
 	"time"
 )
 
 type ScoreCalculateParams struct {
-	Person         *personRepo.Person
-	DrivingLicence *drivingLicenceRepo.DrivingLicence
-	Plate          *plateRepo.Plate
-	Offences       *finnotech.DrivingOffenceResult
-	NegativeScore  int8
+	*scoreRepo.Score
 }
 
 func (params *ScoreCalculateParams) CalculateScore(_ context.Context) float64 {
-	score := float64(0)
+	scoreValue := float64(0)
 	scoreCount := float64(0)
 	if s := params.calculateDrivingOffencesComplexity(); s != nil {
-		score += *s
+		scoreValue += *s
 		scoreCount++
 	}
 	if s := params.calculateNegativeScoreComplexity(); s != nil {
-		score += *s
+		scoreValue += *s
 		scoreCount++
 	}
 	if s := params.calculateAgeComplexity(); s != nil {
-		score += *s
+		scoreValue += *s
 		scoreCount++
 	}
 	if s := params.calculateGenderComplexity(); s != nil {
-		score += *s
+		scoreValue += *s
 		scoreCount++
 	}
-	return score / scoreCount
+	return scoreValue / scoreCount
 }
 
 func (params *ScoreCalculateParams) calculateDrivingOffencesComplexity() *float64 {
-	if params.Offences == nil || params.Offences.Bills == nil {
+	if params.DrivingOffences == nil {
 		return nil
 	}
 	sumScore := float64(0)
-	for _, bill := range params.Offences.Bills {
+	for _, bill := range params.DrivingOffences {
 		switch bill.Code {
 		case "2001", "2013", "2015", "2009", "2003", "2002", "2007", "2004", "2005", "2010", "2012", "2039", "2048", "2077", "2018":
 			sumScore += 1
@@ -52,7 +46,7 @@ func (params *ScoreCalculateParams) calculateDrivingOffencesComplexity() *float6
 			sumScore += 0.5
 		}
 	}
-	score := sumScore / float64(len(params.Offences.Bills))
+	score := sumScore / float64(len(params.DrivingOffences))
 
 	return &score
 }

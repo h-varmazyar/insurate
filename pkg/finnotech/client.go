@@ -67,7 +67,6 @@ func (c *Client) doRequest(req *http.Request, res interface{}) (int, error) {
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	fmt.Println(req.URL.String())
 	defer func() {
 		_ = response.Body.Close()
 	}()

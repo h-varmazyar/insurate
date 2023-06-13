@@ -4,6 +4,10 @@ import (
 	"context"
 	"github.com/google/uuid"
 	gormext "github.com/h-varmazyar/gopack/gorm"
+	drivingLicenceRepo "github.com/h-varmazyar/insurate/internal/core/repository/drivingLicence"
+	"github.com/h-varmazyar/insurate/internal/core/repository/drivingOffence"
+	personRepo "github.com/h-varmazyar/insurate/internal/core/repository/person"
+	plateRepo "github.com/h-varmazyar/insurate/internal/core/repository/plate"
 	db "github.com/h-varmazyar/insurate/internal/pkg/db/PostgreSQL"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -23,9 +27,14 @@ const (
 
 type Score struct {
 	gormext.UniversalModel
-	NationalCode string
-	Value        float64
-	Status       Status
+	NationalCode    string
+	Person          *personRepo.Person                 `gorm:"-"`
+	DrivingLicence  *drivingLicenceRepo.DrivingLicence `gorm:"-"`
+	DrivingOffences []*drivingOffence.DrivingOffence   `gorm:"-"`
+	Plate           *plateRepo.Plate                   `gorm:"-"`
+	NegativeScore   int8                               `gorm:"-"`
+	Value           float64
+	Status          Status
 }
 
 type Repository interface {
