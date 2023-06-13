@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -29,7 +30,7 @@ func (c *Controller) RegisterRoutes() {
 
 func (c *Controller) scoreGroup() {
 	score := c.Group("/score")
-	score.GET("/new", c.newScore)
+	score.POST("/new", c.newScore)
 	score.GET("/:score_id/download", c.downloadScoreReport)
 }
 
@@ -40,6 +41,7 @@ func (c *Controller) newScore(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
+	fmt.Println(req)
 	resp, err := c.service.NewScore(ctx, req)
 	if err != nil {
 		ctx.String(http.StatusNotAcceptable, err.Error())

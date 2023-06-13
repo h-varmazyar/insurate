@@ -13,12 +13,13 @@ const tableName = "plates"
 
 type Plate struct {
 	gormext.UniversalModel
-	Person      *personRepo.Person
-	Alphabet    string
-	StartNumber int8
-	EndNumber   int8
-	RegionCode  int8
-	Text        string //unique
+	PersonID    uint
+	Person      *personRepo.Person `gorm:"foreignKey:PersonID"`
+	Alphabet    string             `gorm:"size:10;required"`
+	StartNumber int8               `gorm:"required"`
+	EndNumber   int16              `gorm:"required"`
+	RegionCode  int8               `gorm:"required"`
+	Text        string             `gorm:"size:20;required"`
 }
 
 type Repository interface {

@@ -8,7 +8,7 @@ import (
 type Plate struct {
 	Alphabet    string
 	StartNumber int8
-	EndNumber   int8
+	EndNumber   int16
 	RegionCode  int8
 }
 

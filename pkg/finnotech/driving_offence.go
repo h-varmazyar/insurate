@@ -26,7 +26,7 @@ func (c *Client) DrivingOffence(ctx context.Context, drivingOffenceReq *DrivingO
 	}
 
 	queryParams := url.Values{
-		"version":     []string{"2"},
+		"parameter":   []string{"m16006203"},
 		"plateNumber": []string{generatePlateCode(drivingOffenceReq.Plate)},
 		"nationalID":  []string{drivingOffenceReq.NationalCode},
 		"mobile":      []string{drivingOffenceReq.Mobile},

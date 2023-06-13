@@ -19,11 +19,12 @@ const (
 )
 
 type Person struct {
-	NationalCode string //primary key
+	gorm.Model
+	NationalCode string `gorm:"index:idx_national_code,unique"`
+	FirstName    string `gorm:"size:100"`
+	LastName     string `gorm:"size:100"`
+	Mobile       string `gorm:"size:11"`
 	BirthDate    time.Time
-	FirstName    string
-	LastName     string
-	Mobile       string
 	Gender
 }
 

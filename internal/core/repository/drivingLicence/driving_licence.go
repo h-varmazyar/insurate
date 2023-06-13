@@ -30,14 +30,11 @@ const (
 
 type DrivingLicence struct {
 	gormext.UniversalModel
-	Person         *personRepo.Person
-	Number         uint64 //primary key
+	Number         uint64 `gorm:"unique"`
+	PersonID       uint
+	Person         *personRepo.Person `gorm:"foreignKey:PersonID"`
 	ExpirationTime time.Time
-	AllowedVehicle []AllowedLicence
-	NegativeScore  int8
-	OffenceCount   int16
-	Rule           string
-	IssuedDate     time.Time
+	AllowedVehicle []AllowedLicence `gorm:"-"`
 }
 
 type AllowedLicence struct {

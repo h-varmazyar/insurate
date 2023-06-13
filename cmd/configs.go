@@ -6,7 +6,7 @@ import (
 )
 
 type Configs struct {
-	HttpPort  uint16            `mapstructure:"grpc_port"`
+	HttpPort  uint16            `mapstructure:"http_port"`
 	Finnotech *finnotech.Config `mapstructure:"finnotech"`
 	DB        gormext.Configs   `mapstructure:"db"`
 }

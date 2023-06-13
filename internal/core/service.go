@@ -44,7 +44,7 @@ func NewService(ctx context.Context, log *log.Logger, db *db.DB, finnotechClient
 
 	service.personRepository, err = personRepo.NewRepository(ctx, log, db)
 	if err != nil {
-		log.WithError(err).Error("driving licence repository failed")
+		log.WithError(err).Error("person repository failed")
 		return nil, err
 	}
 
@@ -60,17 +60,23 @@ func NewService(ctx context.Context, log *log.Logger, db *db.DB, finnotechClient
 		return nil, err
 	}
 
+	service.scoreRepository, err = scoreRepo.NewRepository(ctx, log, db)
+	if err != nil {
+		log.WithError(err).Error("score repository failed")
+		return nil, err
+	}
+
 	return service, nil
 }
 
 type NewScoreReq struct {
-	DrivingLicenceNumber string
-	NationalCode         string
-	Mobile               string
-	PlateAlphabet        string
-	PlateStart           int8
-	PlateEnd             int8
-	PlateRegion          int8
+	DrivingLicenceNumber string `json:"driving_licence_number"`
+	NationalCode         string `json:"national_code"`
+	Mobile               string `json:"mobile"`
+	PlateAlphabet        string `json:"plate_alphabet"`
+	PlateStart           int8   `json:"plate_start"`
+	PlateEnd             int16  `json:"plate_end"`
+	PlateRegion          int8   `json:"plate_region"`
 }
 
 type NewScoreResp struct {
@@ -102,7 +108,7 @@ func (s *Service) NewScore(ctx context.Context, req *NewScoreReq) (*NewScoreResp
 	}
 
 	//todo: read time from config
-	if score != nil && score.CreatedAt.After(time.Now().Add(-1*time.Hour*24*30)) {
+	if score != nil && score.CreatedAt.After(time.Now().Add(-1*time.Second*20)) {
 		return &NewScoreResp{ScoreID: score.ID}, nil
 	} else {
 		score = &scoreRepo.Score{
@@ -119,6 +125,7 @@ func (s *Service) NewScore(ctx context.Context, req *NewScoreReq) (*NewScoreResp
 			_ = s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.Failed)
 		}
 	}()
+	fmt.Println("creating models")
 
 	scoreCalculateParams.Person, err = s.preparePerson(ctx, req.Mobile, req.NationalCode)
 	if err != nil {
@@ -134,6 +141,8 @@ func (s *Service) NewScore(ctx context.Context, req *NewScoreReq) (*NewScoreResp
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("model created")
 
 	timeoutCtx, _ := context.WithTimeout(context.Background(), time.Minute)
 	go s.scoringAsyncProcesses(timeoutCtx, score, scoreCalculateParams)
@@ -155,13 +164,16 @@ func (s *Service) DownloadScore(ctx context.Context, req *DownloadScoreReq) (*Do
 }
 
 func (s *Service) scoringAsyncProcesses(ctx context.Context, score *scoreRepo.Score, params *ScoreCalculateParams) {
+	fmt.Println("starting async")
 	var err error
 	defer func() {
 		if err != nil {
 			_ = s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.Failed)
 		}
 	}()
-	_ = s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.PreparingData)
+	pe := s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.PreparingData)
+	fmt.Println("preparing data")
+	fmt.Println(pe)
 	params.Offences, err = s.getDrivingOffence(ctx, params.Plate, params.Person)
 	if err != nil {
 		log.WithError(err).Error("failed to get driving offences")
@@ -173,10 +185,12 @@ func (s *Service) scoringAsyncProcesses(ctx context.Context, score *scoreRepo.Sc
 		log.WithError(err).Error("failed to get negative score")
 		return
 	}
+	fmt.Println("calculating")
 	_ = s.scoreRepository.UpdateStatus(ctx, score.ID, scoreRepo.Calculating)
 	score.Value = params.CalculateScore(ctx)
 	score.Status = scoreRepo.Done
 	err = s.scoreRepository.Update(ctx, score)
+	fmt.Println("done:", score.Value)
 }
 
 func (s *Service) preparePerson(ctx context.Context, mobileNumber, nationalCode string) (*personRepo.Person, error) {
@@ -219,11 +233,14 @@ func (s *Service) preparePlate(ctx context.Context, person *personRepo.Person, r
 	var plate *plateRepo.Plate
 	plate, err = s.plateRepository.ReturnByText(ctx, plateText)
 	if err != nil && err == gorm.ErrRecordNotFound {
-		plate.Alphabet = req.PlateAlphabet
-		plate.StartNumber = req.PlateStart
-		plate.EndNumber = req.PlateEnd
-		plate.RegionCode = req.PlateRegion
-		plate.Person = person
+		plate = &plateRepo.Plate{
+			Alphabet:    req.PlateAlphabet,
+			StartNumber: req.PlateStart,
+			EndNumber:   req.PlateEnd,
+			RegionCode:  req.PlateRegion,
+			Person:      person,
+		}
+
 		err = s.plateRepository.Create(ctx, plate)
 	}
 	if err != nil {
@@ -239,8 +256,10 @@ func (s *Service) prepareDrivingLicence(ctx context.Context, person *personRepo.
 	}
 	licence, err := s.drivingLicenceRepository.ReturnByNumber(ctx, licenceNumber)
 	if err != nil && err == gorm.ErrRecordNotFound {
-		licence.Number = licenceNumber
-		licence.Person = person
+		licence := &drivingLicenceRepo.DrivingLicence{
+			Number: licenceNumber,
+			Person: person,
+		}
 		err = s.drivingLicenceRepository.Create(ctx, licence)
 	}
 	if err != nil {

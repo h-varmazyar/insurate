@@ -39,7 +39,7 @@ type DrivingOffenceBill struct {
 	DataValue      string      `json:"dataValue"`
 	Barcode        interface{} `json:"barcode"`
 	Licence        string      `json:"license"`
-	BillID         int32       `json:"billId"`
+	BillID         string      `json:"billId"`
 	PaymentID      int32       `json:"paymentId"`
 	NormalizedDate string      `json:"normalizedDate"`
 	IsPayable      bool        `json:"isPayable"`
@@ -49,7 +49,7 @@ type DrivingOffenceBill struct {
 
 type DrivingOffenceResult struct {
 	Bills       []*DrivingOffenceBill `json:"Bills"`
-	TotalAmount int32                 `json:"TotalAmount"`
+	TotalAmount string                `json:"TotalAmount"`
 }
 
 type DrivingOffence struct {
@@ -60,7 +60,7 @@ type DrivingOffence struct {
 type Plate struct {
 	Alphabet    string
 	StartNumber int8
-	EndNumber   int8
+	EndNumber   int16
 	RegionCode  int8
 }
 
