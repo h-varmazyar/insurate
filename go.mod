@@ -1,14 +1,20 @@
 module github.com/h-varmazyar/insurate
 
-go 1.18
+go 1.21
 
 require (
+	github.com/BurntSushi/toml v1.2.1
+	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.9.1
+	github.com/getsentry/sentry-go v0.22.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.3.0
 	github.com/h-varmazyar/gopack v0.0.0-20230609144234-73d2561a33cf
 	github.com/h-varmazyar/gopet v1.0.0
+	github.com/nicksnyder/go-i18n/v2 v2.2.1
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.16.0
+	golang.org/x/text v0.9.0
 	gorm.io/gorm v1.25.1
 )
 
@@ -38,6 +44,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
+	github.com/rabbitmq/amqp091-go v1.9.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
@@ -50,7 +57,6 @@ require (
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
