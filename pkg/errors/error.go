@@ -19,8 +19,9 @@ func (e *Error) Error() string {
 	return e.Message
 }
 
-func (e *Error) AddOriginalError(err error) {
+func (e *Error) AddOriginalError(err error) *Error {
 	e.originalError = err
+	return e
 }
 
 func (e *Error) Original() error {
@@ -30,7 +31,7 @@ func (e *Error) Original() error {
 	return nil
 }
 
-func (e *Error) AddDetail(key string, detail interface{}) {
+func (e *Error) AddDetail(key string, detail interface{}) *Error {
 	if e.details == nil {
 		e.details = make(map[string]string)
 	}
@@ -40,6 +41,8 @@ func (e *Error) AddDetail(key string, detail interface{}) {
 	} else {
 		e.details[key] = fmt.Sprintf("%v - %v", v, detail)
 	}
+
+	return e
 }
 
 func (e *Error) Details() map[string]string {
