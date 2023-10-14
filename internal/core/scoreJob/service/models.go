@@ -19,10 +19,3 @@ type JobStatusRequest struct {
 type JobStatus struct {
 	Status string
 }
-
-type ScoreReportRequest struct {
-	TrackingId string
-}
-
-type ScoreReport struct {
-}

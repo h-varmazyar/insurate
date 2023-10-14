@@ -15,7 +15,7 @@ type postgresRepository struct {
 
 func newPostgresRepository(_ context.Context, logger *log.Logger, db *gorm.DB) (Repository, error) {
 	if db == nil {
-		return nil, errors.New("invalid db instance in score job")
+		return nil, errors.New("invalid db instance in score report")
 	}
 	return &postgresRepository{
 		db:     db,
@@ -23,18 +23,18 @@ func newPostgresRepository(_ context.Context, logger *log.Logger, db *gorm.DB) (
 	}, nil
 }
 
-func (r *postgresRepository) Create(_ context.Context, job *entity.ScoreJob) error {
+func (r *postgresRepository) Create(_ context.Context, job *entity.ScoreReport) error {
 	if err := r.db.Create(job).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *postgresRepository) Status(_ context.Context, jobId uint) (entity.JobStatus, error) {
-	status := new(entity.JobStatus)
-	err := r.db.Model(new(entity.ScoreJob)).Where("id = ?", jobId).Select("status").Scan(status).Error
+func (r *postgresRepository) ReturnByTrackingId(_ context.Context, trackingId string) (*entity.ScoreReport, error) {
+	scoreReport := new(entity.ScoreReport)
+	err := r.db.Model(new(entity.ScoreReport)).Where("tracking_id = ?", trackingId).First(scoreReport).Error
 	if err != nil {
-		return entity.JobStatusUnknown, err
+		return nil, err
 	}
-	return *status, nil
+	return scoreReport, nil
 }

@@ -2,24 +2,53 @@ package entity
 
 import (
 	"encoding/json"
-	gormext "github.com/h-varmazyar/gopack/gorm"
+	"gorm.io/gorm"
 )
 
 type JobStatus int
 
 const (
-	JobStatusPending JobStatus = iota
+	JobStatusUnknown JobStatus = iota
+	JobStatusPending
 	JobStatusProcessing
 	JobStatusDone
 	JobStatusFailed
 )
 
-func (j *JobStatus) String() string {
-	return "reflect."
+var (
+	jobStatusName = map[JobStatus]string{
+		JobStatusUnknown:    "Unknown",
+		JobStatusPending:    "Pending",
+		JobStatusProcessing: "Processing",
+		JobStatusDone:       "Done",
+		JobStatusFailed:     "Failed",
+	}
+
+	jobStatusValue = map[string]JobStatus{
+		"Unknown":    JobStatusUnknown,
+		"Pending":    JobStatusPending,
+		"Processing": JobStatusProcessing,
+		"Done":       JobStatusDone,
+		"Failed":     JobStatusFailed,
+	}
+)
+
+func (j JobStatus) String() string {
+	name, ok := jobStatusName[j]
+	if ok {
+		return name
+	}
+	return ""
+}
+
+func (j *JobStatus) Value(value interface{}) error {
+	*j = jobStatusValue[value.(string)]
+	return nil
 }
 
 type ScoreJob struct {
-	gormext.UniversalModel
+	gorm.Model
+	TrackingId        string
 	NationalId        string
 	Mobile            string
 	Plate             string

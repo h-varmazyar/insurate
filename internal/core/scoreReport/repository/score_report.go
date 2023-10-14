@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	tableName = "score_jobs"
+	tableName = "score_reports"
 )
 
 type Repository interface {
-	Create(ctx context.Context, job *entity.ScoreJob) error
-	Status(ctx context.Context, jobId uint) (entity.JobStatus, error)
+	Create(ctx context.Context, report *entity.ScoreReport) error
+	ReturnByTrackingId(ctx context.Context, trackingId string) (*entity.ScoreReport, error)
 }
 
 func NewRepository(ctx context.Context, logger *log.Logger, db *db.DB) (Repository, error) {
@@ -47,7 +47,7 @@ func migration(_ context.Context, dbInstance *db.DB) error {
 			newMigrations = append(newMigrations, &db.Migration{
 				TableName:   tableName,
 				Tag:         "v1.0.0",
-				Description: "create score_jobs table",
+				Description: "create score_reports table",
 			})
 		}
 		err = tx.Model(new(db.Migration)).CreateInBatches(&newMigrations, 100).Error

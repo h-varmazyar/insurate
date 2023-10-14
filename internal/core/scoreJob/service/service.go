@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	nid "github.com/h-varmazyar/gopet/national_id"
 	"github.com/h-varmazyar/gopet/phone"
 	"github.com/h-varmazyar/insurate/internal/core/scoreJob/repository"
@@ -11,6 +11,12 @@ import (
 	amqpext "github.com/h-varmazyar/insurate/pkg/amqp"
 	"github.com/h-varmazyar/insurate/pkg/validator"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"strconv"
+	"strings"
+)
+
+const (
+	trackingIdPattern = "NSRT-%v"
 )
 
 type Service struct {
@@ -64,35 +70,35 @@ func (s *Service) SubmitScoreJob(ctx context.Context, submitJobReq *SubmitScoreJ
 		return nil, err
 	}
 
+	trackingId := fmt.Sprintf(trackingIdPattern, job.ID)
 	msg := amqp.Publishing{
 		ContentType:  gin.MIMEJSON,
 		DeliveryMode: amqp.Persistent,
-		MessageId:    job.ID.String(),
+		MessageId:    trackingId,
 		Timestamp:    job.CreatedAt,
 		Body:         []byte(job.Json()),
 	}
 	if err = s.amqpClient.Channel().PublishWithContext(ctx, s.configs.ScoreJobExchange, s.configs.ScoreJobQueue, false, true, msg); err != nil {
 		return nil, ErrJobSubmitFailed.AddOriginalError(err)
 	}
-	resp := &SubmitScoreJobResponse{TrackingId: id.String()}
+	resp := &SubmitScoreJobResponse{TrackingId: trackingId}
 
 	return resp, nil
 }
 
 func (s *Service) JobStatus(ctx context.Context, jobStatusReq *JobStatusRequest) (*JobStatus, error) {
-	jobId, err := uuid.Parse(jobStatusReq.JobId)
+	strId := strings.TrimPrefix(jobStatusReq.TrackingId, "NSRT-")
+	jobId, err := strconv.Atoi(strId)
 	if err != nil {
 		return nil, ErrInvalidJob
 	}
 
 	var status entity.JobStatus
-	status, err = s.scoreJobRepository.Status(ctx, jobId)
+	status, err = s.scoreJobRepository.Status(ctx, uint(jobId))
 	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
+
 	resp := &JobStatus{
 		Status: status.String(),
 	}
